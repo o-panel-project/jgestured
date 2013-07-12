@@ -44,10 +44,10 @@ static int create_uinput_device(int fd)
 	struct uinput_user_dev uidev;
 	memset(&uidev, 0, sizeof(uidev));
 
-	snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "goodix gesture proxy");
+	snprintf(uidev.name, UINPUT_MAX_NAME_SIZE, "j3 gesture proxy");
 	uidev.id.bustype = BUS_VIRTUAL;
-	uidev.id.vendor  = 0x0eef;
-	uidev.id.product = 0x0011;
+	uidev.id.vendor  = 0xdead;
+	uidev.id.product = 0xbeef;
 	uidev.id.version = 1;
 	uidev.absmax [ABS_X] = 2047;
 	uidev.absmax [ABS_Y] = 2047;

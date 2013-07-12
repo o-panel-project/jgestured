@@ -43,10 +43,8 @@ const float m_mapped_yres = MELFAS_YRES;
 const float m_mapped_xres = 600.0;
 const float m_mapped_yres = 1024.0;
 #endif
-//const float m_phys_xsize = 125.28;
-//const float m_phys_ysize = 222.72;
 const float m_phys_xsize = 222.72;
-const float m_phys_ysize = 125.28;
+const float m_phys_ysize = 125.25;
 
 static int opt_flick_dir;
 static char *opt_event_file;
@@ -60,7 +58,7 @@ static int do_terminate = 0;
  * GRAIL_TYPE_TAP1     15
  * GRAIL_TYPE_TAP2     16
  */
-const static char *gesture_mask = "0x000018019";
+const static char *gesture_mask = "0x000000019";
 static grail_mask_t flag_mask[DIM_GRAIL_TYPE_BYTES];
 
 /* Debug print */
@@ -69,7 +67,8 @@ static grail_mask_t flag_mask[DIM_GRAIL_TYPE_BYTES];
 #define DEBUG_PINCH2_PROPERTY	0
 #define DEBUG_TAP1_PROPERTY		0
 #define DEBUG_TAP2_PROPERTY		0
-#define DEBUG_INPUT_IGNORED		0
+#define DEBUG_TP_EVENT			0
+#define FLICK_DEBUG_PRINT		0
 
 /* for Flick event */
 #define DIM_FM	4
@@ -84,6 +83,8 @@ static int   mSingleDrag = 0;
 static int   mMultiPinching = 0;
 static grail_time_t mGestureStartTime = 0;
 
+static float scale_x = 0.0;	/* Unit of pixel */
+static float scale_y = 0.0;	/* Unit of pixel */
 static float scale_ppm_x = 0.0;	/* Unit of mm */
 static float scale_ppm_y = 0.0;	/* Unit of mm */
 const static float radian_30 = 30 * M_PI / 180;
@@ -96,13 +97,27 @@ const static float flick_velo_max_threshold = 35.0;		/* ave. velocity max */
 const static grail_time_t drag_timeout_threshold = 500;/* 1sec */
 const static float pinch_dist_min_threshold = 4.0;		/* mm */
 
+struct grail_event gev_touch;
+
 static void setup_scale(struct grail *ge)
 {
 	struct grail_coord min, max, box;
+	struct grail_coord smin, smax;
 	grail_get_mapped_units(ge, &min, &max);
 	grail_get_phys_units(ge, &box);
-	scale_ppm_x = (max.y - min.y) / box.y;
-	scale_ppm_y = (max.x - min.x) / box.x;
+	scale_ppm_x = (max.x - min.x) / box.x;
+	scale_ppm_y = (max.y - min.y) / box.y;
+	grail_get_units(ge, &smin, &smax);
+	scale_x = (max.x - min.x + 1) / (smax.x - smin.x + 1);
+	scale_y = (max.y - min.y + 1) / (smax.y - smin.y + 1);
+	fprintf(stdout, "%s() - phys box:%f,%f\n",
+			__func__, box.x, box.y);
+	fprintf(stdout, "%s() - map  box:%f,%f - %f,%f\n",
+			__func__, min.x, min.y, max.x, max.y);
+	fprintf(stdout, "%s() - reso box:%f,%f - %f,%f\n",
+			__func__, smin.x, smin.y, smax.x, smax.y);
+	fprintf(stdout, "%s() - scale_ppm:%f,%f scale:%f,%f\n",
+			__func__, scale_ppm_x, scale_ppm_y, scale_x, scale_y);
 }
 
 static void flick_reset(struct grail *ge, const struct grail_event *ev)
@@ -140,7 +155,7 @@ static void flick_transform(struct grail *ge, const struct grail_event *ev)
 	mVelocity[FM_R] = hypotf(phys_velo_x, phys_velo_y);
 #if FLICK_DEBUG_PRINT
 	fprintf(stdout, "\t%s() - dist:%f(mm), velo:%f(mm/ms), dir:%f(rad)\n",
-			_\func__, mDistance[FM_R], mVelocity[FM_R], mDistance[FM_A]);
+			__func__, mDistance[FM_R], mVelocity[FM_R], mDistance[FM_A]);
 #endif
 }
 
@@ -240,8 +255,6 @@ static int pinch_check(struct grail *ge, const struct grail_event *ev)
 {
 	float dw, dh;
 
-	mPinchingDistance[FM_R] = ev->prop[GRAIL_PROP_PINCH_R];
-
 	dw = fabs(ev->prop[GRAIL_PROP_PINCH_X2]
 				- ev->prop[GRAIL_PROP_PINCH_X1]) / scale_ppm_x;
 	dh = fabs(ev->prop[GRAIL_PROP_PINCH_Y2]
@@ -262,7 +275,9 @@ static int pinch_check(struct grail *ge, const struct grail_event *ev)
 
 static int pinch_direction(struct grail *ge, const struct grail_event *ev)
 {
-	if (ev->prop[GRAIL_PROP_PINCH_R] > mPinchingDistance[FM_R])
+	float fCurr = mPinchingDistance[FM_R];
+	mPinchingDistance[FM_R] = ev->prop[GRAIL_PROP_PINCH_R];
+	if (ev->prop[GRAIL_PROP_PINCH_R] > fCurr)
 		return 28;	/* pinch in *//* zoom in */
 	return 29;		/* pinch out *//* zoom out */
 }
@@ -507,13 +522,72 @@ static int tp_get_clients(struct grail *ge,
 	return 1;
 }
 
+/*
+ * Single touch event.
+ * Grail callback when not gesture.
+ */
 static void tp_event(struct grail *ge, const struct input_event *ev)
 {
-#if DEBUG_INPUT_IGNORED
-	fprintf(stderr, "%lu.%06u %04x %04x %d\n",
+	struct uinput_api *ua = ge->priv;
+
+#if DEBUG_TP_EVENT
+	fprintf(stderr, "%lu.%06u %04x %04x %08x\n",
 		ev->time.tv_sec, (unsigned)ev->time.tv_usec,
 		ev->type, ev->code, ev->value);
 #endif
+
+	switch (ev->type) {
+	case EV_ABS:
+		if (ev->code == ABS_MT_TRACKING_ID) {
+			if (ev->value != -1) {
+				if (gev_touch.id != ev->value) {
+					gev_touch.id = ev->value;
+					gev_touch.status = GRAIL_STATUS_BEGIN;
+				}
+			} else {
+				gev_touch.id = -1;
+				gev_touch.status = GRAIL_STATUS_END;
+			}
+			break;
+		}
+		if (ev->code == ABS_MT_POSITION_X) {
+			gev_touch.pos.x = ev->value * scale_x;
+			break;
+		}
+		if (ev->code == ABS_MT_POSITION_Y) {
+			gev_touch.pos.y = ev->value * scale_y;
+			break;
+		}
+		break;
+	case EV_SYN:
+		if (ev->code == SYN_REPORT) {
+			if (gev_touch.status == GRAIL_STATUS_BEGIN) {
+				ua->valuators[0] = gev_touch.pos.x;
+				ua->valuators[1] = gev_touch.pos.y;
+				uinput_PenDown(ua);
+				gev_touch.status = GRAIL_STATUS_UPDATE;
+				break;
+			}
+			if (gev_touch.status == GRAIL_STATUS_UPDATE) {
+				ua->valuators[0] = gev_touch.pos.x;
+				ua->valuators[1] = gev_touch.pos.y;
+				uinput_PenMove(ua);
+				break;
+			}
+			if (gev_touch.status == GRAIL_STATUS_END) {
+				ua->valuators[0] = gev_touch.pos.x;
+				ua->valuators[1] = gev_touch.pos.y;
+				uinput_PenUp(ua);
+				break;
+			}
+		}
+		break;
+	default:
+		fprintf(stderr, "Unknown event %lu.%06u %04x %04x %08x\n",
+			ev->time.tv_sec, (unsigned)ev->time.tv_usec,
+			ev->type, ev->code, ev->value);
+		break;
+	}
 }
 
 static void loop_device(struct grail *ge, int fd)
@@ -524,7 +598,7 @@ static void loop_device(struct grail *ge, int fd)
 
 static void on_terminate(int signal)
 {
-	fprintf(stderr, "goodixgd caught signal %d, terminate.\n", signal);
+	fprintf(stderr, "jgestured caught signal %d, terminate.\n", signal);
 	do_terminate = 1;
 }
 
@@ -557,6 +631,7 @@ int main(int argc, char *argv[])
 				opt_flick_dir = opt_dir;
 			break;
 		case 'i':
+			free(opt_event_file);
 			opt_event_file = strdup(optarg);
 			break;
 		default:
@@ -574,13 +649,8 @@ int main(int argc, char *argv[])
 	unsigned long long mask = strtoull(gesture_mask, 0, 0);
 	for (i = 0; i < DIM_GRAIL_TYPE; i++)
 		if ((mask >> i) & 1) {
-//			fprintf(stdout, "mask bit %d\n", i);
 			grail_mask_set(flag_mask, i);
 		}
-//	fprintf(stdout, "mask 0x");
-//	for (i = 0; i < DIM_GRAIL_TYPE_BYTES; i++)
-//		fprintf(stdout, "%02x", flag_mask[i] & 0xff);
-//	fprintf(stdout, "\n");
 
 	set_signal_handler();
 
@@ -604,12 +674,14 @@ int main(int argc, char *argv[])
 		goto exit_lbl;
 	}
 
-	struct grail_coord min = { 0, 0 }, max = { m_mapped_xres, m_mapped_yres };
+	struct grail_coord min = { 0, 0 };
+	struct grail_coord max = { m_mapped_xres-1, m_mapped_yres-1 };
 	struct grail_coord pbox = { m_phys_xsize, m_phys_ysize };
 	grail_set_bbox(&ge, &min, &max, &pbox);
 
 	setup_scale(&ge);
 	flick_reset(&ge, NULL);
+	gev_touch.id = 0;
 
 	ua = uinput_new();
 	ge.priv = (void*)ua;

@@ -266,7 +266,7 @@ static void report_frame_raw(const struct utouch_frame *frame)
 		fprintf(stderr, "  vy:           %f\n", t->vy);
 	}
 
-	fprintf(stderr, "sync %d %ld %d %d %d\n",
+	fprintf(stderr, "sync %d %012llx %d %d %d\n",
 					frame->num_active,
 					frame->time,
 					frame->sequence_id,
@@ -299,16 +299,25 @@ static void grail_pump_mtdev(struct grail *ge, const struct input_event *ev)
 	}
 }
 
+#define NUM_EVENTS 8
 int grail_pull(struct grail *ge, int fd)
 {
 	struct grail_impl *impl = ge->impl;
-	struct input_event ev;
-        int ret, count = 0;
+	struct input_event ev[NUM_EVENTS];
+	int ret, count = 0, i, len = sizeof(ev);
 
-        while ((ret = mtdev_get(impl->mtdev, fd, &ev, 1)) > 0) {
-		grail_pump_mtdev(ge, &ev);
-                count++;
-        }
+	while (len == sizeof(ev)) {
+		len = mtdev_get(impl->mtdev, fd, ev, NUM_EVENTS) *
+												sizeof(struct input_event);
+		if (len <= 0)
+			break;
+		if (len % sizeof(ev[0]))
+			break;
+		for (i = 0; i < len/sizeof(ev[0]); i++) {
+			grail_pump_mtdev(ge, &ev[i]);
+			count++;
+		}
+	}
 
-        return count > 0 ? count : ret;
+	return count > 0 ? count : 0;
 }
