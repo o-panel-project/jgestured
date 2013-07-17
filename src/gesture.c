@@ -91,10 +91,10 @@ const static float radian_30 = 30 * M_PI / 180;
 const static float radian_45 = 45 * M_PI / 180;
 const static float radian_60 = 60 * M_PI / 180;
 const static float flick_dist_min_threshold = 5.0;		/* min distance */
-const static float flick_dist_max_threshold = 100.0;	/* max distance */
+const static float flick_dist_max_threshold = 120.0;		/* max distance */
 const static float flick_velo_min_threshold = 10.0;		/* ave. velocity min */
-const static float flick_velo_max_threshold = 35.0;		/* ave. velocity max */
-const static grail_time_t drag_timeout_threshold = 500;/* 1sec */
+const static float flick_velo_max_threshold = 25.0;		/* ave. velocity max */
+const static grail_time_t drag_timeout_threshold = 500;	/* 1sec */
 const static float pinch_dist_min_threshold = 4.0;		/* mm */
 
 struct grail_event gev_touch;
