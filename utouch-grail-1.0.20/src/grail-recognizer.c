@@ -47,9 +47,14 @@ void gru_recognize(struct grail *ge, const struct utouch_frame *frame)
 	if (!ge->gin || !ge->gru)
 		return;
 	gru_motion(ge, frame);
+#if defined(JPANEL_TOUCHSCREEN)
 	gru_drag(ge, frame);
 	gru_pinch(ge, frame);
-#if !defined(JPANEL_TOUCHSCREEN)
+	gru_rotate(ge, frame);
+	gru_tapping(ge, frame);
+#else
+	gru_drag(ge, frame);
+	gru_pinch(ge, frame);
 	gru_rotate(ge, frame);
 	gru_windrag(ge, frame);
 	gru_winpinch(ge, frame);

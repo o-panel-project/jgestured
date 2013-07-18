@@ -54,19 +54,33 @@ static int do_terminate = 0;
  * Gesture type        bit
  * GRAIL_TYPE_DRAG1    0
  * GRAIL_TYPE_DRAG2    3
+ * GRAIL_TYPE_DRAG3    6
+ * GRAIL_TYPE_DRAG4    9
+ * GRAIL_TYPE_DRAG5    12
+ * GRAIL_TYPE_PINCH1   -
  * GRAIL_TYPE_PINCH2   4
+ * GRAIL_TYPE_PINCH3   7
+ * GRAIL_TYPE_PINCH4   10
+ * GRAIL_TYPE_PINCH5   13
+ * GRAIL_TYPE_ROTATE1  -
+ * GRAIL_TYPE_ROTATE2  5
+ * GRAIL_TYPE_ROTATE3  8
+ * GRAIL_TYPE_ROTATE4  11
+ * GRAIL_TYPE_ROTATE5  14
  * GRAIL_TYPE_TAP1     15
  * GRAIL_TYPE_TAP2     16
+ * GRAIL_TYPE_TAP3     17
+ * GRAIL_TYPE_TAP4     18
+ * GRAIL_TYPE_TAP5     19
  */
-const static char *gesture_mask = "0x000000019";
+const static char *gesture_mask = "0x0000ffff9";
 static grail_mask_t flag_mask[DIM_GRAIL_TYPE_BYTES];
 
 /* Debug print */
 #define DEBUG_DRAG1_PROPERTY	0
-#define DEBUG_DRAG2_PROPERTY	0
 #define DEBUG_PINCH2_PROPERTY	0
 #define DEBUG_TAP1_PROPERTY		0
-#define DEBUG_TAP2_PROPERTY		0
+#define DEBUG_UNSUPP_PROPERTY	0
 #define DEBUG_TP_EVENT			0
 #define FLICK_DEBUG_PRINT		0
 
@@ -96,8 +110,6 @@ const static float flick_velo_min_threshold = 10.0;		/* ave. velocity min */
 const static float flick_velo_max_threshold = 25.0;		/* ave. velocity max */
 const static grail_time_t drag_timeout_threshold = 500;	/* 1sec */
 const static float pinch_dist_min_threshold = 4.0;		/* mm */
-
-struct grail_event gev_touch;
 
 static void setup_scale(struct grail *ge)
 {
@@ -282,6 +294,8 @@ static int pinch_direction(struct grail *ge, const struct grail_event *ev)
 	return 29;		/* pinch out *//* zoom out */
 }
 
+#if DEBUG_DRAG1_PROPERTY || DEBUG_PINCH2_PROPERTY || \
+	DEBUG_TAP1_PROPERTY || DEBUG_UNSUPP_PROPERTY
 static void gesture_property(struct grail *ge, const struct grail_event *ev)
 {
 	struct grail_contact touch[32];
@@ -303,6 +317,7 @@ static void gesture_property(struct grail *ge, const struct grail_event *ev)
 	for (i = 0; i < ev->nprop; i++)
 		fprintf(stderr, "\t%d: %f\n", i, ev->prop[i]);
 }
+#endif
 
 static void gesture_reset(struct grail *ge, const struct grail_event *ev)
 {
@@ -316,6 +331,7 @@ static void gesture_tap1(struct grail *ge, const struct grail_event *ev)
 {
 	struct uinput_api *ua = ge->priv;
 
+//	fprintf(stdout, "%s() ---------\n", __func__);
 #if DEBUG_TAP1_PROPERTY
 	gesture_property(ge, ev);
 #endif
@@ -326,33 +342,11 @@ static void gesture_tap1(struct grail *ge, const struct grail_event *ev)
 	uinput_PenUp(ua);
 }
 
-static void gesture_tap2(struct grail *ge, const struct grail_event *ev)
-{
-	struct uinput_api *ua = ge->priv;
-
-#if DEBUG_TAP2_PROPERTY
-	gesture_property(ge, ev);
-#endif
-
-	ua->valuators[2] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_DT];
-	ua->valuators[0] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_X_T0];
-	ua->valuators[1] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_Y_T0];
-	uinput_PenDown(ua);
-	ua->valuators[0] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_X_T1];
-	ua->valuators[1] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_Y_T1];
-	uinput_PenDown_2nd(ua);
-	ua->valuators[0] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_X_T0];
-	ua->valuators[1] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_Y_T0];
-	uinput_PenUp(ua);
-	ua->valuators[0] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_X_T1];
-	ua->valuators[1] = (u_int16_t)ev->prop[GRAIL_PROP_TAP_Y_T1];
-	uinput_PenUp_2nd(ua);
-}
-
 static void gesture_drag1(struct grail *ge, const struct grail_event *ev)
 {
 	struct uinput_api *ua = ge->priv;
 
+//	fprintf(stdout, "%s() ---------\n", __func__);
 #if DEBUG_DRAG1_PROPERTY
 	gesture_property(ge, ev);
 #endif
@@ -400,13 +394,6 @@ static void gesture_drag1(struct grail *ge, const struct grail_event *ev)
 	}
 }
 
-static void gesture_drag2(struct grail *ge, const struct grail_event *ev)
-{
-#if DEBUG_DRAG2_PROPERTY
-	gesture_property(ge, ev);
-#endif
-}
-
 static void gesture_pinch2(struct grail *ge, const struct grail_event *ev)
 {
 	struct uinput_api *ua = ge->priv;
@@ -414,6 +401,7 @@ static void gesture_pinch2(struct grail *ge, const struct grail_event *ev)
 	struct grail_contact touch[32];
 	const struct grail_contact *gc;
 
+//	fprintf(stdout, "%s() ---------\n", __func__);
 #if DEBUG_PINCH2_PROPERTY
 	gesture_property(ge, ev);
 #endif
@@ -482,6 +470,15 @@ static void gesture_pinch2(struct grail *ge, const struct grail_event *ev)
 	}
 }
 
+static void gesture_unsupported(struct grail *ge, const struct grail_event *ev)
+{
+	fprintf(stdout, "%s() ----- gesture type (%d)\n",
+			__func__, ev->type);
+#if DEBUG_UNSUPP_PROPERTY
+	gesture_property(ge, ev);
+#endif
+}
+
 static void tp_gesture(struct grail *ge, const struct grail_event *ev)
 {
 	switch (ev->type) {
@@ -490,20 +487,20 @@ static void tp_gesture(struct grail *ge, const struct grail_event *ev)
 		gesture_reset(ge, ev);
 		break;
 	case GRAIL_TYPE_TAP2:
-//		gesture_tap2(ge, ev);
+	case GRAIL_TYPE_TAP3:
+	case GRAIL_TYPE_TAP4:
+	case GRAIL_TYPE_TAP5:
+		gesture_unsupported(ge, ev);
 		gesture_reset(ge, ev);
 		break;
 	case GRAIL_TYPE_DRAG1:
 		gesture_drag1(ge, ev);
 		break;
-	case GRAIL_TYPE_DRAG2:
-		gesture_drag2(ge, ev);
-		break;
 	case GRAIL_TYPE_PINCH2:
 		gesture_pinch2(ge, ev);
 		break;
 	default:
-		gesture_property(ge, ev);
+		gesture_unsupported(ge, ev);
 		break;
 	}
 }
@@ -528,66 +525,13 @@ static int tp_get_clients(struct grail *ge,
  */
 static void tp_event(struct grail *ge, const struct input_event *ev)
 {
-	struct uinput_api *ua = ge->priv;
-
+	fprintf(stdout, "%s() ----- event type (%d) gesture unrecognized\n",
+			__func__, ev->type);
 #if DEBUG_TP_EVENT
 	fprintf(stderr, "%lu.%06u %04x %04x %08x\n",
 		ev->time.tv_sec, (unsigned)ev->time.tv_usec,
 		ev->type, ev->code, ev->value);
 #endif
-
-	switch (ev->type) {
-	case EV_ABS:
-		if (ev->code == ABS_MT_TRACKING_ID) {
-			if (ev->value != -1) {
-				if (gev_touch.id != ev->value) {
-					gev_touch.id = ev->value;
-					gev_touch.status = GRAIL_STATUS_BEGIN;
-				}
-			} else {
-				gev_touch.id = -1;
-				gev_touch.status = GRAIL_STATUS_END;
-			}
-			break;
-		}
-		if (ev->code == ABS_MT_POSITION_X) {
-			gev_touch.pos.x = ev->value * scale_x;
-			break;
-		}
-		if (ev->code == ABS_MT_POSITION_Y) {
-			gev_touch.pos.y = ev->value * scale_y;
-			break;
-		}
-		break;
-	case EV_SYN:
-		if (ev->code == SYN_REPORT) {
-			if (gev_touch.status == GRAIL_STATUS_BEGIN) {
-				ua->valuators[0] = gev_touch.pos.x;
-				ua->valuators[1] = gev_touch.pos.y;
-				uinput_PenDown(ua);
-				gev_touch.status = GRAIL_STATUS_UPDATE;
-				break;
-			}
-			if (gev_touch.status == GRAIL_STATUS_UPDATE) {
-				ua->valuators[0] = gev_touch.pos.x;
-				ua->valuators[1] = gev_touch.pos.y;
-				uinput_PenMove(ua);
-				break;
-			}
-			if (gev_touch.status == GRAIL_STATUS_END) {
-				ua->valuators[0] = gev_touch.pos.x;
-				ua->valuators[1] = gev_touch.pos.y;
-				uinput_PenUp(ua);
-				break;
-			}
-		}
-		break;
-	default:
-		fprintf(stderr, "Unknown event %lu.%06u %04x %04x %08x\n",
-			ev->time.tv_sec, (unsigned)ev->time.tv_usec,
-			ev->type, ev->code, ev->value);
-		break;
-	}
 }
 
 static void loop_device(struct grail *ge, int fd)
@@ -681,7 +625,6 @@ int main(int argc, char *argv[])
 
 	setup_scale(&ge);
 	flick_reset(&ge, NULL);
-	gev_touch.id = 0;
 
 	ua = uinput_new();
 	ge.priv = (void*)ua;
