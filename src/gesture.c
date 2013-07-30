@@ -81,7 +81,7 @@ static grail_mask_t flag_mask[DIM_GRAIL_TYPE_BYTES];
 #define DEBUG_PINCH2_PROPERTY	0
 #define DEBUG_TAP1_PROPERTY		0
 #define DEBUG_UNSUPP_PROPERTY	0
-#define DEBUG_TP_EVENT			0
+#define DEBUG_TP_EVENT			1
 #define FLICK_DEBUG_PRINT		0
 
 /* for Flick event */
@@ -525,11 +525,10 @@ static int tp_get_clients(struct grail *ge,
  */
 static void tp_event(struct grail *ge, const struct input_event *ev)
 {
-	fprintf(stdout, "%s() ----- event type (%d) gesture unrecognized\n",
-			__func__, ev->type);
 #if DEBUG_TP_EVENT
-	fprintf(stderr, "%lu.%06u %04x %04x %08x\n",
-		ev->time.tv_sec, (unsigned)ev->time.tv_usec,
+	fprintf(stderr,
+			"%s() %lu.%06u %04x %04x %08x -- gesture recognize missing.\n",
+		__func__, ev->time.tv_sec, (unsigned)ev->time.tv_usec,
 		ev->type, ev->code, ev->value);
 #endif
 }
