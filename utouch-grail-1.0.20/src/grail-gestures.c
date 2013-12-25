@@ -35,7 +35,7 @@ static const float EPS = 1e-3;	/* pinchに影響 */
 static const float FM_SN[DIM_FM] = { 1000, 1000, 1000, 1000 };
 static const float FM_BAR[DIM_FM] = { 50, 50, 50, 50 };
 static const grail_time_t FM_HOLD_MS[DIM_FM] = { 10, 10, 10, 10 };
-static const grail_time_t FM_BAR_MS[DIM_FM] = { 170, 170, 240, 240 };/*tap*/
+static const grail_time_t FM_BAR_MS[DIM_FM] = { 300, 300, 500, 500 };/*tap*/
 static const grail_time_t SAMPLE_MS = 0;
 static const float EPS = 1e-3;	/* pinchに影響 */
 #else

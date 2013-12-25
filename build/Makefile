@@ -1,7 +1,7 @@
 ARCH = armel
 CROSSTOOLS = arm-none-linux-gnueabi-
 CROSSDEVDIR = /opt/arm-dev/sysroots/armv7a-none-linux-gnueabi
-BUILD_DEBUG = yes
+BUILD_DEBUG = no
 
 MTDEVD = ../mtdev-1.1.3
 EVEMUD = ../utouch-evemu-1.0.9
