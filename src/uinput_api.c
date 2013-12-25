@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * Uinput event for X11.
  */
 
 #include <stdio.h>
@@ -15,8 +15,9 @@
 
 #include "uinput_api.h"
 
-#define UINPUT_DEBUG_PRINT 0
-#define INTERVAL(x) hard_sleep(x)
+#define UINPUT_DEBUG_PRINT	0
+//#define INTERVAL(x) hard_sleep(x)
+#define INTERVAL(x)
 
 static int hard_sleep(unsigned long msec)
 {
@@ -148,7 +149,7 @@ void uinput_destroy(struct uinput_api *ua)
 	}
 }
 
-void uinput_PenDown(struct uinput_api *ua)
+void uinput_PenDown_1st(struct uinput_api *ua)
 {
 	send_event(ua->fd, EV_ABS, ABS_X, ua->valuators[0]);
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);
@@ -173,7 +174,7 @@ void uinput_PenDown_2nd(struct uinput_api *ua)
 #endif
 }
 
-void uinput_PenUp(struct uinput_api *ua)
+void uinput_PenUp_1st(struct uinput_api *ua)
 {
 	send_event(ua->fd, EV_ABS, ABS_X, ua->valuators[0]);
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);
@@ -198,7 +199,7 @@ void uinput_PenUp_2nd(struct uinput_api *ua)
 #endif
 }
 
-void uinput_PenMove(struct uinput_api *ua)
+void uinput_PenMove_1st(struct uinput_api *ua)
 {
 	send_event(ua->fd, EV_ABS, ABS_X, ua->valuators[0]);
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);

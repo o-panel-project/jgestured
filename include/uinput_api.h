@@ -17,9 +17,9 @@ void uinput_write(struct uinput_api *ua, struct input_event *ie);
 struct uinput_api *uinput_new();
 void uinput_destroy(struct uinput_api *ua);
 
-void uinput_PenDown(struct uinput_api *ua);
-void uinput_PenUp(struct uinput_api *ua);
-void uinput_PenMove(struct uinput_api *ua);
+void uinput_PenDown_1st(struct uinput_api *ua);
+void uinput_PenUp_1st(struct uinput_api *ua);
+void uinput_PenMove_1st(struct uinput_api *ua);
 void uinput_PenDown_2nd(struct uinput_api *ua);
 void uinput_PenUp_2nd(struct uinput_api *ua);
 void uinput_PenMove_2nd(struct uinput_api *ua);

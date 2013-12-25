@@ -4,14 +4,14 @@ CROSSDEVDIR = /opt/arm-dev/sysroots/armv7a-none-linux-gnueabi
 BUILD_DEBUG = no
 
 MTDEVD = ../mtdev-1.1.3
-EVEMUD = ../utouch-evemu-1.0.9
-FRAMED = ../utouch-frame-1.1.4
-GRAILD = ../utouch-grail-1.0.20
+#EVEMUD = ../utouch-evemu-1.0.9
+#FRAMED = ../utouch-frame-1.1.4
+#GRAILD = ../utouch-grail-1.0.20
 
 MTDEV_SRCS = core.c match.c caps.c match_four.c iobuf.c
-EVEMU_SRCS = evemu.c
-FRAME_SRCS = frame.c frame-mtdev.c
-GRAIL_SRCS = gestures-drag.c gestures-pinch.c gestures-rotate.c \
+#EVEMU_SRCS = evemu.c
+#FRAME_SRCS = frame.c frame-mtdev.c
+#GRAIL_SRCS = gestures-drag.c gestures-pinch.c gestures-rotate.c \
 			 gestures-tapping.c grail-api.c grail-bits.c grail-event.c \
 			 grail-gestures.c grail-inserter.c grail-recognizer.c
 
@@ -21,11 +21,15 @@ OPTCADD = -DJPANEL_TOUCHSCREEN -DMELFAS_TOUCHSCREEN -DMELFAS_XRES=2048.0 -DMELFA
 OPTLADD =
 
 TARGET = jgestured
-SRCS = ${MTDEV_SRCS} ${EVEMU_SRCS} ${FRAME_SRCS} ${GRAIL_SRCS}
-SRCS+= gesture.c uinput_api.c
+#SRCS = ${MTDEV_SRCS} ${EVEMU_SRCS} ${FRAME_SRCS} ${GRAIL_SRCS}
+SRCS = ${MTDEV_SRCS}
+#SRCS+= gesture.c uinput_api.c
+SRCS+= main.c uinput_api.c frame.c
+SRCS+= gesture_param.c gesture_touch.c gesture_flick.c gesture_pinch.c
 OBJS = ${SRCS:%.c=%.o}
 
-VPATH = ../src:${MTDEVD}/src:${EVEMUD}/src:${FRAMED}/src:${GRAILD}/src
+#VPATH = ../src:${MTDEVD}/src:${EVEMUD}/src:${FRAMED}/src:${GRAILD}/src
+VPATH = ../src:${MTDEVD}/src
 
 CC = ${CROSSTOOLS}gcc
 LD = ${CROSSTOOLS}gcc
@@ -37,8 +41,9 @@ CFLAGS  = -g -O2 -Wall
 CFLAGS += -march=armv7-a -mtune=cortex-a8 -mfpu=neon -mhard-float
 CFLAGS += -mfloat-abi=softfp -ftree-vectorize -mvectorize-with-neon-quad
 CFLAGS += -mthumb-interwork -mno-thumb
-CFLAGS += -I${MTDEVD}/include -I${EVEMUD}/include
-CFLAGS += -I${FRAMED}/include -I${GRAILD}/include -I${GRAILD}/src
+#CFLAGS += -I${MTDEVD}/include -I${EVEMUD}/include
+CFLAGS += -I../include -I${MTDEVD}/include
+#CFLAGS += -I${FRAMED}/include -I${GRAILD}/include -I${GRAILD}/src
 CFLAGS += -I${CROSSDEVDIR}/usr/include
 CFLAGS += ${OPTCADD}
 
