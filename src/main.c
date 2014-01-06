@@ -28,7 +28,7 @@ static struct utouch_frame *mpFrame = NULL;
 
 static void print_event(const struct input_event *ev)
 {
-#if DEBIG_EVENT_PRINT
+#if DEBUG_EVENT_PRINT
 	static const utouch_frame_time_t ms = 1000;
 	static int slot = 0;
 	utouch_frame_time_t evtime = ev->time.tv_usec / ms + ev->time.tv_sec * ms;
