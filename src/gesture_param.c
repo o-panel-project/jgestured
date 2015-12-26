@@ -3,10 +3,13 @@
  */
 
 #include <stdio.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/ioctl.h>
 
 /* device parameters */
-static const float m_device_xres = 1024.0;	/* panel x resolution (pixel) */
-static const float m_device_yres = 600.0;	/* panel y resolution (pixel) */
+static float m_device_xres = 1024.0;	/* panel x resolution (pixel) */
+static float m_device_yres = 600.0;	/* panel y resolution (pixel) */
 static const float m_phys_xsize  = 222.72;	/* panel size width (mm) */
 static const float m_phys_ysize  = 125.25;	/* panel size height (mm) */
 static const float m_mapped_xres = 2048.0;	/* mapping x resolution (pixel) */
@@ -27,8 +30,21 @@ float flick_time_max_threshold = 300.0;    /* max time */
 /* pinching threshold */
 float pinch_dist_min_threshold = 4.0;      /* min distance */
 
+void get_resolution()
+{
+	struct fb_var_screeninfo vinfo;
+	int fd = open("/dev/fb", O_RDWR);
+	if (!fd)
+		return;
+	if (ioctl(fd, FBIOGET_VSCREENINFO, &vinfo))
+		return;
+	m_device_xres = vinfo.xres;
+	m_device_yres = vinfo.yres;
+}
+
 void gesture_init()
 {
+	get_resolution();
 	m_scale_x = m_mapped_xres / m_device_xres;
 	m_scale_y = m_mapped_yres / m_device_yres;
 	m_scale_ppm_x = m_device_xres / m_phys_xsize;
