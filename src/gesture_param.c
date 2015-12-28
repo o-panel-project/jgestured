@@ -4,12 +4,15 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
 
 /* device parameters */
+static float m_screen_xres = 1024.0;	/* panel x resolution (pixel) */
+static float m_screen_yres = 600.0;		/* panel y resolution (pixel) */
 static float m_device_xres = 1024.0;	/* panel x resolution (pixel) */
-static float m_device_yres = 600.0;	/* panel y resolution (pixel) */
+static float m_device_yres = 600.0;		/* panel y resolution (pixel) */
 static const float m_phys_xsize  = 222.72;	/* panel size width (mm) */
 static const float m_phys_ysize  = 125.25;	/* panel size height (mm) */
 static const float m_mapped_xres = 2048.0;	/* mapping x resolution (pixel) */
@@ -30,27 +33,60 @@ float flick_time_max_threshold = 300.0;    /* max time */
 /* pinching threshold */
 float pinch_dist_min_threshold = 4.0;      /* min distance */
 
-void get_resolution()
+void get_scr_resolution()
 {
 	struct fb_var_screeninfo vinfo;
 	int fd = open("/dev/fb", O_RDWR);
-	if (!fd)
+	if (fd < 0)
 		return;
-	if (ioctl(fd, FBIOGET_VSCREENINFO, &vinfo))
+	if (ioctl(fd, FBIOGET_VSCREENINFO, &vinfo) == 0) {
+		m_screen_xres = vinfo.xres;
+		m_screen_yres = vinfo.yres;
+	}
+	close(fd);
+	return;
+}
+
+enum {
+	MMS_IOCTL_FW_SIZE = 0xA1,
+	MMS_IOCTL_FW_DATA,
+	MMS_IOCTL_FW_UPDATE,
+	MMS_IOCTL_FW_UPDATE_FORCE,
+	MMS_IOCTL_GET_VERSION,
+	MMS_IOCTL_GET_RESOLUTION_X,
+	MMS_IOCTL_GET_RESOLUTION_Y,
+};
+#define	IOCTL_GET_RESOLUTION_X	_IOR('W', MMS_IOCTL_GET_RESOLUTION_X, unsigned long*)
+#define	IOCTL_GET_RESOLUTION_Y	_IOR('W', MMS_IOCTL_GET_RESOLUTION_Y, unsigned long*)
+
+void get_tp_resolution()
+{
+	int x, y;
+	int fd = open("/dev/mms_ts", O_RDWR);
+	if (fd < 0)
 		return;
-	m_device_xres = vinfo.xres;
-	m_device_yres = vinfo.yres;
+	if (ioctl(fd, IOCTL_GET_RESOLUTION_X, (unsigned long*)&x) == 0) {
+		if (ioctl(fd, IOCTL_GET_RESOLUTION_Y, (unsigned long*)&y) == 0) {
+			m_device_xres = x;
+			m_device_yres = y;
+		}
+	}
+	close(fd);
+	return;
 }
 
 void gesture_init()
 {
-	get_resolution();
+	get_scr_resolution();
+	get_tp_resolution();
 	m_scale_x = m_mapped_xres / m_device_xres;
 	m_scale_y = m_mapped_yres / m_device_yres;
 	m_scale_ppm_x = m_device_xres / m_phys_xsize;
 	m_scale_ppm_y = m_device_yres / m_phys_ysize;
 	flick_velo_min_threshold /= 1000;	/* mm/ms */
 
+	fprintf(stdout, "%s() - screen  resolution %.1f x %.1f\n",
+			__func__, m_screen_xres, m_screen_yres);
 	fprintf(stdout, "%s() - device  resolution %.1f x %.1f\n",
 			__func__, m_device_xres, m_device_yres);
 	fprintf(stdout, "%s() - mapping resolution %.1f x %.1f\n",
