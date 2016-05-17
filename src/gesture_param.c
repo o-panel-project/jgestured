@@ -47,20 +47,46 @@ void get_scr_resolution()
 	return;
 }
 
+#define GET_RESOLUTION_FROM_SYSFS
+#undef  GET_RESOLUTION_FROM_IOCTL
 enum {
 	MMS_IOCTL_FW_SIZE = 0xA1,
 	MMS_IOCTL_FW_DATA,
 	MMS_IOCTL_FW_UPDATE,
 	MMS_IOCTL_FW_UPDATE_FORCE,
 	MMS_IOCTL_GET_VERSION,
+#if defined(GET_RESOLUTION_FROM_IOCTL)
 	MMS_IOCTL_GET_RESOLUTION_X,
 	MMS_IOCTL_GET_RESOLUTION_Y,
+#endif
 };
+#if defined(GET_RESOLUTION_FROM_IOCTL)
 #define	IOCTL_GET_RESOLUTION_X	_IOR('W', MMS_IOCTL_GET_RESOLUTION_X, unsigned long*)
 #define	IOCTL_GET_RESOLUTION_Y	_IOR('W', MMS_IOCTL_GET_RESOLUTION_Y, unsigned long*)
+#endif
+
+#if defined(GET_RESOLUTION_FROM_SYSFS)
+#define SYSFS_MMS_TS "/sys/devices/platform/omap/omap_i2c.3/i2c-3/3-0048/"
+#define INFO_RESOLUTION_NAME	"mms_ts_resolution"
+#endif
 
 void get_tp_resolution()
 {
+#if defined(GET_RESOLUTION_FROM_SYSFS)
+	FILE *fp;
+	int x, y;
+	if ((fp = fopen(SYSFS_MMS_TS INFO_RESOLUTION_NAME, "r")) == NULL) {
+		perror("fopen");
+		return;
+	}
+	if (fscanf(fp, "%dx%d\n", &x, &y) == EOF) {
+		perror("fscanf");
+		return;
+	}
+	fclose(fp);
+	m_device_xres = x;
+	m_device_yres = y;
+#elif defined(GET_RESOLUTION_FROM_IOCTL)
 	int x, y;
 	int fd = open("/dev/mms_ts", O_RDWR);
 	if (fd < 0)
@@ -72,6 +98,7 @@ void get_tp_resolution()
 		}
 	}
 	close(fd);
+#endif
 	return;
 }
 
