@@ -37,15 +37,19 @@ void get_scr_resolution()
 {
 	struct fb_var_screeninfo vinfo;
 	int fd = open("/dev/fb", O_RDWR);
-	if (fd < 0)
+	if (fd < 0) {
+		perror("fb open");
 		return;
+	}
 	if (ioctl(fd, FBIOGET_VSCREENINFO, &vinfo) == 0) {
 		m_screen_xres = vinfo.xres;
 		m_screen_yres = vinfo.yres;
 #if defined(FT5X06_TOUCHSCREEN)
 		/* x,y swap */
-		m_screen_xres = vinfo.yres;
-		m_screen_yres = vinfo.xres;
+		if (vinfo.yres > vinfo.xres) {
+			m_screen_xres = vinfo.yres;
+			m_screen_yres = vinfo.xres;
+		}
 #endif
 	}
 	close(fd);

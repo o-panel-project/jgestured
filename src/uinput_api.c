@@ -120,8 +120,11 @@ struct uinput_api *uinput_new()
 
 	fd = open("/dev/input/uinput", O_WRONLY | O_NONBLOCK);
 	if (fd < 0) {
-		perror("error: open (out)");
-		return NULL;
+		fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+		if (fd < 0) {
+			perror("error: open uinput (out)");
+			return NULL;
+		}
 	}
 
 	if (create_uinput_device(fd) < 0) {
