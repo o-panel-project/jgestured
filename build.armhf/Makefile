@@ -37,7 +37,12 @@ AR = ${CROSSTOOLS}ar
 STRIP = ${CROSSTOOLS}strip
 STRIP_OPT = --remove-section=.comment --remove-section=.note
 
-CFLAGS  = -g -O2 -Wall
+CFLAGS  = -Wall
+ifneq ($(BUILD_DEBUG),yes)
+CFLAGS  = -O2
+else
+CFLAGS  = -g -O0
+endif
 CFLAGS += -march=armv7-a -mtune=cortex-a8 -mfpu=neon -mhard-float
 CFLAGS += -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
 CFLAGS += -mthumb-interwork
