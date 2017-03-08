@@ -137,7 +137,8 @@ int frame_abs_event(struct utouch_frame *frame, const struct input_event *ev)
 
 	switch (ev->code) {
 	case ABS_MT_SLOT:
-		frame->current_slot = ev->value;
+		if (ev->value < frame->num_slots)
+			frame->current_slot = ev->value;
 		return 1;
 	case ABS_MT_TRACKING_ID:
 		if (ev->value == -1) {
