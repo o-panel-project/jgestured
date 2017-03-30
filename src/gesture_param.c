@@ -56,8 +56,10 @@ void get_scr_resolution()
 	return;
 }
 
-#undef GET_RESOLUTION_FROM_SYSFS
+#if defined(MELFAS_TOUCHSCREEN)
+#define GET_RESOLUTION_FROM_SYSFS
 #undef  GET_RESOLUTION_FROM_IOCTL
+#endif
 enum {
 	MMS_IOCTL_FW_SIZE = 0xA1,
 	MMS_IOCTL_FW_DATA,
@@ -84,8 +86,8 @@ void get_tp_resolution()
 #if defined(FT5X06_TOUCHSCREEN)
 	m_device_xres = 1280;	/* x resolution */
 	m_device_yres = 800;	/* y resolution */
-	m_phys_xsize  = 216.58;	/* panel size width (mm) */
-	m_phys_ysize  = 135.36;	/* panel size height (mm) */
+	m_phys_xsize  = 216.96;	/* panel size width (mm) */
+	m_phys_ysize  = 135.60;	/* panel size height (mm) */
 #elif defined(GET_RESOLUTION_FROM_SYSFS)
 	FILE *fp;
 	int x, y;
