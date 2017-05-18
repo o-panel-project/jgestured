@@ -15,7 +15,8 @@
 
 #include "uinput_api.h"
 
-#define UINPUT_DEBUG_PRINT	0
+/* debug switch */
+int uinput_debug_print = 0;
 //#define INTERVAL(x) hard_sleep(x)
 #define INTERVAL(x)
 
@@ -158,10 +159,9 @@ void uinput_PenDown_1st(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);
 	send_event(ua->fd, EV_KEY, BTN_LEFT, 1);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - PenDown xpos:%4d  ypos:%4d\n",
 			__func__, ua->valuators[0], ua->valuators[1]);
-#endif
 	INTERVAL(10);
 }
 
@@ -171,10 +171,9 @@ void uinput_PenDown_2nd(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_RY, ua->valuators[1]);
 	send_event(ua->fd, EV_KEY, BTN_EXTRA, 1);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - Second PenDown xpos:%4d  ypos:%4d\n",
 			__func__, ua->valuators[0], ua->valuators[1]);
-#endif
 }
 
 void uinput_PenUp_1st(struct uinput_api *ua)
@@ -183,10 +182,9 @@ void uinput_PenUp_1st(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);
 	send_event(ua->fd, EV_KEY, BTN_LEFT, 0);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - Sending PenUp (%dms)\n",
 			__func__, ua->valuators[2]);
-#endif
 	INTERVAL(10);
 }
 
@@ -196,10 +194,9 @@ void uinput_PenUp_2nd(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_RY, ua->valuators[1]);
 	send_event(ua->fd, EV_KEY, BTN_EXTRA, 0);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - Second Sending PenUp (%dms)\n",
 			__func__, ua->valuators[2]);
-#endif
 }
 
 void uinput_PenMove_1st(struct uinput_api *ua)
@@ -207,10 +204,9 @@ void uinput_PenMove_1st(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_X, ua->valuators[0]);
 	send_event(ua->fd, EV_ABS, ABS_Y, ua->valuators[1]);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - Drag- x:%4d   y:%4d\n",
 			__func__, ua->valuators[0], ua->valuators[1]);
-#endif
 	INTERVAL(10);
 }
 
@@ -219,10 +215,9 @@ void uinput_PenMove_2nd(struct uinput_api *ua)
 	send_event(ua->fd, EV_ABS, ABS_RX, ua->valuators[0]);
 	send_event(ua->fd, EV_ABS, ABS_RY, ua->valuators[1]);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - Second Drag- x:%4d  y:%4d\n",
 			__func__, ua->valuators[0], ua->valuators[1]);
-#endif
 }
 
 void uinput_Gesture(struct uinput_api *ua)
@@ -235,11 +230,10 @@ void uinput_Gesture(struct uinput_api *ua)
 	value = value << 24 | ua->valuators[2];
 	send_event(ua->fd, EV_MSC, MSC_GESTURE, value);
 	send_event(ua->fd, EV_SYN, SYN_REPORT, 0);
-#if UINPUT_DEBUG_PRINT
+	if (uinput_debug_print == 1)
 	fprintf(stdout, "%s() - GestureId: %d, Period:%d, "
 					"xDist:%d, yDist:%d\n", __func__,
 					ua->gestureId, ua->valuators[2],
 					ua->valuators[0], ua->valuators[1]);
-#endif
 }
 /* EOF */

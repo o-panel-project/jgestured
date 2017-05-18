@@ -8,7 +8,8 @@
 #include "frame.h"
 #include "gesture.h"
 
-#define FLICK_DEBUG_PRINT 0
+/* debug switch */
+extern int flick_debug_print;
 
 extern float m_scale_ppm_x; /* Unit of mm */
 extern float m_scale_ppm_y; /* Unit of mm */
@@ -64,12 +65,12 @@ void flick_update(const struct utouch_frame *f)
 {
 	utouch_frame_time_t dt;
 
-#if FLICK_DEBUG_PRINT
+	if (flick_debug_print == 1) {
 	fprintf(stdout, "\t%s() - new xpos %.2f, before xpos %.2f\n", __func__,
 		f->slots[f->current_slot]->x, mFlickPos_x);
 	fprintf(stdout, "\t%s() - new ypos %.2f, before ypos %.2f\n", __func__,
 		f->slots[f->current_slot]->y, mFlickPos_y);
-#endif
+	}
 
 	mFlickDistance[FM_X] +=
 		(f->slots[f->current_slot]->x - mFlickPos_x) / m_scale_ppm_x;
@@ -83,12 +84,11 @@ void flick_update(const struct utouch_frame *f)
 		mFlickVelocity[FM_Y] = mFlickDistance[FM_Y] / dt;
 	}
 
-#if FLICK_DEBUG_PRINT
+	if (flick_debug_print == 1)
 	fprintf(stdout, "\t%s() - xDist:%.2f(mm), yDist:%.2f(mm), "
 		"xVelo:%.2f(mm/ms), yVelo:%.2f(mm/ms), time:%llu(ms)\n", __func__,
 		mFlickDistance[FM_X], mFlickDistance[FM_Y],
 		mFlickVelocity[FM_X], mFlickVelocity[FM_Y], dt);
-#endif
 }
 
 static void flick_transform(const struct utouch_frame *f)
@@ -102,12 +102,11 @@ static void flick_transform(const struct utouch_frame *f)
 	mFlickVelocity[FM_R] =
 		hypotf(mFlickVelocity[FM_X], mFlickVelocity[FM_Y]);
 
-#if FLICK_DEBUG_PRINT
+	if (flick_debug_print == 1)
 	fprintf(stdout, "\t%s() - dist:%.2f(mm), velo:%.2f(mm/ms), "
 			"dir:%.2f(rad), time:%llu(ms)\n", __func__,
 			mFlickDistance[FM_R], mFlickVelocity[FM_R], mFlickDistance[FM_A],
 			(f->time - mFlickStartTime));
-#endif
 }
 
 int flick_check(const struct utouch_frame *f)
@@ -136,10 +135,9 @@ int flick_check(const struct utouch_frame *f)
 		return 0;
 	if (dt < flick_time_min_threshold)
 		return 0;
-#if FLICK_DEBUG_PRINT
+	if (flick_debug_print == 1)
 	fprintf(stdout, "\t%s() - dist:%.2f(mm), velo:%.2f(mm/ms), time:%llu(ms)\n",
 			__func__, mFlickDistance[FM_R], mFlickVelocity[FM_R], dt);
-#endif
 	return 1;   /* flick */
 }
 

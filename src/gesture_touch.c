@@ -7,7 +7,8 @@
 #include "frame.h"
 #include "uinput_api.h"
 
-#define TOUCH_DEBUG_PRINT 0
+/* debug switch */
+extern int touch_debug_print;
 
 extern float m_scale_x;
 extern float m_scale_y;
@@ -27,10 +28,9 @@ void touch_down_event(struct uinput_api *ua, struct utouch_frame *f)
 	ua->valuators[0] = (u_int16_t)val;
 	val = (u_int16_t)t->y * m_scale_y;
 	ua->valuators[1] = (u_int16_t)val;
-#if TOUCH_DEBUG_PRINT > 0
+	if (touch_debug_print == 1)
 	fprintf(stdout, "%s() %d:(%f,%f)\n",
 			__func__, f->slot_revision, t->x, t->y);
-#endif
 	if (f->slot_revision == 0) {
 		uinput_PenDown_1st(ua);
 	} else if (f->slot_revision == 1) {
@@ -49,10 +49,9 @@ void touch_up_event(struct uinput_api *ua, struct utouch_frame *f)
 	ua->valuators[0] = (u_int16_t)val;
 	val = (u_int16_t)t->y * m_scale_y;
 	ua->valuators[1] = (u_int16_t)val;
-#if TOUCH_DEBUG_PRINT > 0
+	if (touch_debug_print == 1)
 	fprintf(stdout, "%s() %d:(%f,%f)\n",
 			__func__, f->slot_revision, t->x, t->y);
-#endif
 	if (f->slot_revision == 0) {
 		uinput_PenUp_1st(ua);
 	} else if (f->slot_revision == 1) {
@@ -71,10 +70,9 @@ void touch_move_event(struct uinput_api *ua, struct utouch_frame *f)
 	ua->valuators[0] = (u_int16_t)val;
 	val = (u_int16_t)t->y * m_scale_y;
 	ua->valuators[1] = (u_int16_t)val;
-#if TOUCH_DEBUG_PRINT > 0
+	if (touch_debug_print == 1)
 	fprintf(stdout, "%s() %d:(%f,%f)\n",
 			__func__, f->slot_revision, t->x, t->y);
-#endif
 	if (f->slot_revision == 0) {
 		uinput_PenMove_1st(ua);
 	} else if (f->slot_revision == 1) {

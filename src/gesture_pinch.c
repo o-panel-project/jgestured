@@ -8,7 +8,8 @@
 #include "frame.h"
 #include "gesture.h"
 
-#define PINCH_DEBUG_PRINT 0
+/* debug switch */
+extern int pinch_debug_print;
 
 extern float m_scale_ppm_x;
 extern float m_scale_ppm_y;

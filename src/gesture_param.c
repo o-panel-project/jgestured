@@ -33,6 +33,11 @@ float flick_time_max_threshold = 300.0;    /* max time */
 /* pinching threshold */
 float pinch_dist_min_threshold = 4.0;      /* min distance */
 
+/* debug switch */
+int flick_debug_print = 0;
+int pinch_debug_print = 0;
+int touch_debug_print = 0;
+
 void get_scr_resolution()
 {
 	struct fb_var_screeninfo vinfo;

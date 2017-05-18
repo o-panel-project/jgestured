@@ -15,8 +15,6 @@
 #include "frame.h"
 #include "gesture.h"
 
-#define DEBUG_EVENT_PRINT 0
-
 static int mRunning = 0;
 static struct mtdev *mpDev = NULL;
 static struct uinput_api *mpUa = NULL;
@@ -26,9 +24,17 @@ static int mMultiTouch = 0;
 #define MAX_TOUCH 2
 static struct utouch_frame *mpFrame = NULL;
 
+/* debug switch */
+int event_debug_print = 0;
+extern int uinput_debug_print;
+extern int flick_debug_print;
+extern int pinch_debug_print;
+extern int touch_debug_print;
+
 static void print_event(const struct input_event *ev)
 {
-#if DEBUG_EVENT_PRINT
+	if (event_debug_print == 0)
+		return;
 	static const utouch_frame_time_t ms = 1000;
 	static int slot = 0;
 	utouch_frame_time_t evtime = ev->time.tv_usec / ms + ev->time.tv_sec * ms;
@@ -36,7 +42,6 @@ static void print_event(const struct input_event *ev)
 		slot = ev->value;
 	fprintf(stderr, "%012llx %02d(%02d) %01d %04x %d\n",
 		evtime, slot, mpFrame->current_slot, ev->type, ev->code, ev->value);
-#endif
 }
 
 /* Gesture recognizer */
@@ -164,6 +169,20 @@ static void set_signal_handler()
 	sigprocmask(SIG_UNBLOCK, &mask, NULL);
 }
 
+static void debug_print_parse(char *optarg)
+{
+	if (strchr(optarg, 'e'))
+		event_debug_print = 1;
+	if (strchr(optarg, 'u'))
+		uinput_debug_print = 1;
+	if (strchr(optarg, 'f'))
+		flick_debug_print = 1;
+	if (strchr(optarg, 'p'))
+		pinch_debug_print = 1;
+	if (strchr(optarg, 't'))
+		touch_debug_print = 1;
+}
+
 int main(int argc, char *argv[])
 {
 	struct stat fs;
@@ -171,7 +190,7 @@ int main(int argc, char *argv[])
 	int opt_dir;
 	char *input_event_file = strdup("/dev/input/melfas0");
 
-	while ((opt = getopt(argc, argv, "d:i:")) != -1) {
+	while ((opt = getopt(argc, argv, "d:i:p:")) != -1) {
 		switch (opt) {
 		case 'd':
 			opt_dir = atoi(optarg);
@@ -180,6 +199,9 @@ int main(int argc, char *argv[])
 		case 'i':
 			free(input_event_file);
 			input_event_file = strdup(optarg);
+			break;
+		case 'p':
+			debug_print_parse(optarg);
 			break;
 		default:
 			fprintf(stderr, "Usage: %s [-d 4|8] [-i device]\n", argv[0]);
